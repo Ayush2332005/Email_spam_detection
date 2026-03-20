@@ -12,14 +12,39 @@ from preprocess import clean_text
 nltk.download('stopwords')
 
 # Load dataset
+# Load dataset
 df = pd.read_csv("data/enron_spam_data.csv")
+
+# Combine Subject + Message into one column FIRST
+df["text"] = df["Subject"].fillna('') + " " + df["Message"].fillna('')
+
+# Now apply category
+def assign_category(text):
+    text = str(text).lower()
+
+    if any(word in text for word in ["offer","win","free","prize","money"]):
+        return "Spam"
+    elif any(word in text for word in ["meeting","project","client","report"]):
+        return "Work"
+    elif any(word in text for word in ["deadline","urgent","asap"]):
+        return "Important"
+    else:
+        return "Personal"
+
+df["category"] = df["text"].apply(assign_category)
+# Combine Subject + Message into one column
+df["text"] = df["Subject"].fillna('') + " " + df["Message"].fillna('')
+
+df["category"] = df["text"].apply(assign_category)
 
 # Combine text
 df["text"] = df["Subject"].fillna('') + " " + df["Message"].fillna('')
 
 # Clean labels
-df["Spam/Ham"] = df["Spam/Ham"].str.lower().str.strip()
-df["label"] = df["Spam/Ham"].map({"spam":1, "ham":0})
+from sklearn.preprocessing import LabelEncoder
+
+le = LabelEncoder()
+df["label"] = le.fit_transform(df["category"])
 
 df = df.dropna()
 
@@ -42,7 +67,9 @@ model = MultinomialNB()
 model.fit(X_train, y_train)
 
 # Save
-pickle.dump(model, open("models/model.pkl", "wb"))
+import pickle
+pickle.dump(le, open("models/label_encoder.pkl", "wb"))
+
 pickle.dump(vectorizer, open("models/vectorizer.pkl", "wb"))
 
 # Accuracy
