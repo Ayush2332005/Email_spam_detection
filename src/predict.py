@@ -1,11 +1,17 @@
 import pickle
-from preprocess import clean_text
 
+# Load
 model = pickle.load(open("models/model.pkl", "rb"))
 vectorizer = pickle.load(open("models/vectorizer.pkl", "rb"))
+le = pickle.load(open("models/label_encoder.pkl", "rb"))
 
-def predict_email(text):
-    text = clean_text(text)
-    vec = vectorizer.transform([text])
-    pred = model.predict(vec)[0]
-    return "Spam" if pred == 1 else "Not Spam"
+# Input
+text = input("Enter email text: ")
+
+# Transform
+X = vectorizer.transform([text])
+
+# Predict
+pred = model.predict(X)[0]
+
+print("Prediction:", le.inverse_transform([pred])[0])
